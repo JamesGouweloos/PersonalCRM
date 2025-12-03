@@ -1,0 +1,103 @@
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const path = require('path');
+// Load .env from project root (one level up from server directory)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+const db = require('./database');
+const tokenRefreshService = require('./services/token-refresh');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Health check (available immediately)
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'CRM API is running' });
+});
+
+// Initialize database first (this will run migrations)
+db.initialize();
+
+// Wait longer for database initialization and migrations to complete, then load routes
+// SQLite CREATE TABLE operations are async, so we need to wait for them
+setTimeout(() => {
+  try {
+    console.log('Loading API routes...');
+    
+    const emailRoutes = require('./routes/emails');
+    const pipelineRoutes = require('./routes/pipeline');
+    const contactsRoutes = require('./routes/contacts');
+    const communicationsRoutes = require('./routes/communications');
+    const leadsRoutes = require('./routes/leads');
+    const followupsRoutes = require('./routes/followups');
+    const templatesRoutes = require('./routes/templates');
+    const activitiesRoutes = require('./routes/activities');
+    const socialMediaRoutes = require('./routes/social-media');
+    const whatsappRoutes = require('./routes/whatsapp');
+    const commissionRoutes = require('./routes/commission');
+    const auditTrailRoutes = require('./routes/audit-trail');
+    const disputesRoutes = require('./routes/disputes');
+    const callLogsRoutes = require('./routes/call-logs');
+    const emailRulesRoutes = require('./routes/email-rules');
+
+    // API Routes
+    app.use('/api/emails', emailRoutes);
+    app.use('/api/email-rules', emailRulesRoutes);
+    app.use('/api/pipeline', pipelineRoutes);
+    app.use('/api/contacts', contactsRoutes);
+    app.use('/api/communications', communicationsRoutes);
+    app.use('/api/leads', leadsRoutes);
+    app.use('/api/followups', followupsRoutes);
+    app.use('/api/templates', templatesRoutes);
+    app.use('/api/activities', activitiesRoutes);
+    app.use('/api/social-media', socialMediaRoutes);
+    app.use('/api/whatsapp', whatsappRoutes);
+    app.use('/api/commission', commissionRoutes);
+    app.use('/api/audit-trail', auditTrailRoutes);
+    app.use('/api/disputes', disputesRoutes);
+    app.use('/api/call-logs', callLogsRoutes);
+    
+    console.log('✓ All API routes loaded successfully');
+    console.log('  - /api/emails (auth-url, status, sync, etc.)');
+    console.log('  - /api/contacts');
+    console.log('  - /api/email-rules');
+    console.log('  - ... and other routes');
+    
+    // Start automatic token refresh service
+    tokenRefreshService.startTokenRefreshService();
+    
+    // Add a catch-all for API routes that aren't found (after routes are loaded)
+    app.use('/api/*', (req, res) => {
+      console.warn(`API route not found: ${req.method} ${req.originalUrl}`);
+      res.status(404).json({ 
+        error: 'Route not found', 
+        path: req.originalUrl,
+        method: req.method,
+        message: 'The requested API endpoint does not exist.'
+      });
+    });
+  } catch (error) {
+    console.error('✗ Error loading routes:', error);
+    console.error(error.stack);
+    // Don't exit - server can still serve health check
+  }
+}, 3000);
+
+// Serve static files from React app in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+}
+
+app.listen(PORT, () => {
+  console.log(`CRM Server running on http://localhost:${PORT}`);
+  console.log(`API available at http://localhost:${PORT}/api`);
+});

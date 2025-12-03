@@ -1,0 +1,32 @@
+{
+  "name": "custom-crm",
+  "version": "1.0.0",
+  "description": "Custom CRM for sales pipeline tracking and communication aggregation",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "nodemon server/index.js",
+    "client": "cd client && pnpm dev",
+    "install-all": "npm install && cd client && (if (Get-Command pnpm -ErrorAction SilentlyContinue) { pnpm install } else { npm install })",
+    "build": "cd client && pnpm build"
+  },
+  "keywords": ["crm", "sales", "pipeline", "outlook"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "sqlite3": "^5.1.6",
+    "@azure/msal-node": "^2.6.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "body-parser": "^1.20.2",
+    "date-fns": "^2.30.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.2"
+  }
+}
+
+

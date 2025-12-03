@@ -1,6 +1,0 @@
-{
-  "/contacts/page": "app/contacts/page.js",
-  "/email-sync/page": "app/email-sync/page.js",
-  "/inbox/page": "app/inbox/page.js",
-  "/leads/page": "app/leads/page.js"
-}

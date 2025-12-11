@@ -95,78 +95,15 @@ setTimeout(() => {
   }
 }, 3000);
 
-// Serve static files from Next.js app in production
+// Serve static files from React app in production
 if (process.env.NODE_ENV === 'production') {
-  const fs = require('fs');
-  const nextBuildPath = path.join(__dirname, '../client/.next');
-  const standalonePath = path.join(nextBuildPath, 'standalone');
-  const staticPath = path.join(nextBuildPath, 'static');
-  
-  // Check if Next.js standalone build exists (recommended for production)
-  if (fs.existsSync(standalonePath)) {
-    // Next.js standalone mode - serve static assets
-    const standaloneClientPath = path.join(standalonePath, 'client');
-    if (fs.existsSync(standaloneClientPath)) {
-      // Serve static files from standalone/client
-      app.use(express.static(standaloneClientPath));
-      
-      // Serve static assets from .next/static
-      if (fs.existsSync(staticPath)) {
-        app.use('/_next/static', express.static(staticPath));
-      }
-      
-      // Catch-all handler: send back Next.js's index.html file for client-side routing
-      app.get('*', (req, res) => {
-        // Don't handle API routes
-        if (req.path.startsWith('/api')) {
-          return res.status(404).json({ error: 'API route not found' });
-        }
-        
-        const indexPath = path.join(standaloneClientPath, 'index.html');
-        if (fs.existsSync(indexPath)) {
-          res.sendFile(indexPath);
-        } else {
-          res.status(404).send('Next.js app not found. Please ensure the build completed successfully.');
-        }
-      });
-    } else {
-      console.warn('Next.js standalone client path not found:', standaloneClientPath);
-    }
-  } else {
-    console.warn('Next.js standalone build not found. Falling back to static assets only.');
-    // Fallback: serve static assets from .next
-    if (fs.existsSync(staticPath)) {
-      app.use('/_next/static', express.static(staticPath));
-    }
-    
-    // Fallback catch-all
-    app.get('*', (req, res) => {
-      if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'API route not found' });
-      }
-      res.status(404).send('Next.js app not built. Please run: npm run build');
-    });
-  }
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
 }
 
-const HOST = process.env.HOST || '0.0.0.0';
-
-app.listen(PORT, HOST, () => {
-  console.log(`CRM Server running on http://${HOST}:${PORT}`);
-  console.log(`API available at http://${HOST}:${PORT}/api`);
-  
-  // Display network interfaces for remote access
-  if (HOST === '0.0.0.0') {
-    console.log('\n✓ Server is accessible from network interfaces:');
-    const os = require('os');
-    const interfaces = os.networkInterfaces();
-    Object.keys(interfaces).forEach((name) => {
-      interfaces[name].forEach((iface) => {
-        if (iface.family === 'IPv4' && !iface.internal) {
-          console.log(`  - http://${iface.address}:${PORT}`);
-        }
-      });
-    });
-    console.log(`\n⚠️  For internet access, configure port forwarding and use HTTPS`);
-  }
+app.listen(PORT, () => {
+  console.log(`CRM Server running on http://localhost:${PORT}`);
+  console.log(`API available at http://localhost:${PORT}/api`);
 });

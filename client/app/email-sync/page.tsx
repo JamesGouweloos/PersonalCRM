@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
@@ -20,7 +20,7 @@ interface ConnectionStatus {
   refreshWarning?: string
 }
 
-function EmailSyncContent() {
+export default function EmailSyncPage() {
   const searchParams = useSearchParams()
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -282,21 +282,6 @@ OUTLOOK_REDIRECT_URI=http://localhost:3001/api/emails/callback`}
         </div>
       </main>
     </div>
-  )
-}
-
-export default function EmailSyncPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background">
-        <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" />
-        <main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center">
-          <div className="text-muted-foreground">Loading email sync...</div>
-        </main>
-      </div>
-    }>
-      <EmailSyncContent />
-    </Suspense>
   )
 }
 

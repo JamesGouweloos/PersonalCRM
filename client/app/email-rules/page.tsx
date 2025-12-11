@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -31,7 +31,7 @@ interface EmailRule {
   updated_at: string
 }
 
-function EmailRulesContent() {
+export default function EmailRulesPage() {
   const [rules, setRules] = useState<EmailRule[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -131,9 +131,7 @@ function EmailRulesContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Suspense fallback={<div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" />}>
-        <Sidebar />
-      </Suspense>
+      <Sidebar />
       <main className={`${sidebarCollapsed ? "ml-16" : "ml-64"} min-w-0 overflow-x-hidden`} style={{ transition: "margin-left 0.3s" }}>
         <Header title="Email Rules" subtitle="Automate email processing with custom rules" />
         <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
@@ -281,21 +279,6 @@ function EmailRulesContent() {
         </div>
       </main>
     </div>
-  )
-}
-
-export default function EmailRulesPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background">
-        <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" />
-        <main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center">
-          <div className="text-muted-foreground">Loading email rules...</div>
-        </main>
-      </div>
-    }>
-      <EmailRulesContent />
-    </Suspense>
   )
 }
 

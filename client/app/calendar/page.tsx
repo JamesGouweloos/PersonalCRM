@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo, Suspense } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isToday, isPast, parseISO } from "date-fns"
 
-function CalendarContentInner() {
+export default function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [contacts, setContacts] = useState<Record<string, Contact>>({})
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -398,25 +398,6 @@ function CalendarContentInner() {
       </Dialog>
     </div>
   )
-}
-
-function CalendarContent() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background">
-        <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" />
-        <main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center">
-          <div className="text-muted-foreground">Loading calendar...</div>
-        </main>
-      </div>
-    }>
-      <CalendarContentInner />
-    </Suspense>
-  )
-}
-
-export default function CalendarPage() {
-  return <CalendarContent />
 }
 
 

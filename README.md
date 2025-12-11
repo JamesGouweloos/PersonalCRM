@@ -60,9 +60,7 @@ npm install
 
 ## Running the Application
 
-### Local Development
-
-**Option 1: Run Both Servers Separately**
+### Option 1: Run Both Servers Separately
 
 **Terminal 1 - Backend:**
 ```bash
@@ -79,7 +77,7 @@ npm run dev
 ```
 Frontend will run on http://localhost:3000
 
-**Option 2: Run Both Servers Together (Windows PowerShell)**
+### Option 2: Run Both Servers Together (Windows PowerShell)
 
 ```powershell
 # Run backend in background
@@ -92,24 +90,6 @@ Start-Sleep -Seconds 3
 cd client
 pnpm dev
 ```
-
-### Internet Deployment
-
-**For quick deployment to the internet:**
-
-See `DEPLOYMENT_QUICK_START.md` for the fastest way to deploy (Railway/Render).
-
-**For detailed deployment options:**
-
-See `INTERNET_DEPLOYMENT.md` for:
-- Cloud hosting (Railway, Render, Heroku, DigitalOcean)
-- VPS setup with Nginx and SSL
-- Home network with port forwarding
-- Security recommendations
-
-**For local network access:**
-
-See `REMOTE_ACCESS.md` for accessing the app from other devices on your local network.
 
 ## Azure Setup
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
+import { useEffect, useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { StatsCard } from "@/components/stats-card"
@@ -13,7 +13,7 @@ import { WebformSubmissionDialog } from "@/components/webform-submission-dialog"
 import { getLeads, getContacts, getFollowUps, getOpportunities } from "@/lib/store"
 import { Users, UserPlus, Calendar, TrendingUp, Facebook, Instagram, Linkedin, FileText, Plus } from "lucide-react"
 
-function DashboardContent() {
+export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalLeads: 0,
     totalOpportunities: 0,
@@ -192,20 +192,5 @@ function DashboardContent() {
         }}
       />
     </div>
-  )
-}
-
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background">
-        <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" />
-        <main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center">
-          <div className="text-muted-foreground">Loading dashboard...</div>
-        </main>
-      </div>
-    }>
-      <DashboardContent />
-    </Suspense>
   )
 }

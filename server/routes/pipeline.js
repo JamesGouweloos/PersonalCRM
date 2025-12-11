@@ -10,10 +10,6 @@ router.get('/stages', (req, res) => {
     [],
     (err, rows) => {
       if (err) {
-        // If table doesn't exist yet, return empty array (table will be created on next request)
-        if (err.code === 'SQLITE_ERROR' && err.message.includes('no such table')) {
-          return res.json([]);
-        }
         return res.status(500).json({ error: err.message });
       }
       res.json(rows);

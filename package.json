@@ -12,7 +12,7 @@
     "server": "nodemon server/index.js",
     "client": "cd client && (command -v pnpm >/dev/null 2>&1 && pnpm dev || npm run dev)",
     "install-all": "npm install && cd client && (command -v pnpm >/dev/null 2>&1 && pnpm install || npm install)",
-    "build": "npm install && cd client && npm install && npm run build && cd ..",
+    "build": "npm install && cd client && npm install --legacy-peer-deps && npm run build && cd ..",
     "postbuild": "node -e \"const fs=require('fs'); const path=require('path'); const standalone=path.join(__dirname,'client','.next','standalone'); if(fs.existsSync(standalone)){console.log('Next.js standalone build ready');}else{console.log('Next.js build complete');}\"",
     "start": "node server/index.js",
     "start:prod": "NODE_ENV=production node server/index.js"

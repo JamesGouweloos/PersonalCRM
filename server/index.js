@@ -95,12 +95,34 @@ setTimeout(() => {
   }
 }, 3000);
 
-// Serve static files from React app in production
+// Serve static files from Next.js app in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build/index.html'));
-  });
+  const fs = require('fs');
+  const nextBuildPath = path.join(__dirname, '../client/.next');
+  const standalonePath = path.join(nextBuildPath, 'standalone');
+  const staticPath = path.join(nextBuildPath, 'static');
+  
+  // Check if Next.js standalone build exists (recommended for production)
+  if (fs.existsSync(standalonePath)) {
+    // Next.js standalone mode - serve static assets
+    const standaloneClientPath = path.join(standalonePath, 'client');
+    if (fs.existsSync(standaloneClientPath)) {
+      app.use(express.static(standaloneClientPath));
+    }
+    // Serve static assets from .next/static
+    if (fs.existsSync(staticPath)) {
+      app.use('/_next/static', express.static(staticPath));
+    }
+  } else {
+    // Fallback: serve static assets from .next
+    if (fs.existsSync(staticPath)) {
+      app.use('/_next/static', express.static(staticPath));
+    }
+  }
+  
+  // For API routes, they're already handled above
+  // For frontend routes, Next.js should handle them via its own server
+  // In a combined deployment, you might want to proxy or serve from Express
 }
 
 const HOST = process.env.HOST || '0.0.0.0';

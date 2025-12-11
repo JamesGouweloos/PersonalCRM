@@ -107,22 +107,46 @@ if (process.env.NODE_ENV === 'production') {
     // Next.js standalone mode - serve static assets
     const standaloneClientPath = path.join(standalonePath, 'client');
     if (fs.existsSync(standaloneClientPath)) {
+      // Serve static files from standalone/client
       app.use(express.static(standaloneClientPath));
-    }
-    // Serve static assets from .next/static
-    if (fs.existsSync(staticPath)) {
-      app.use('/_next/static', express.static(staticPath));
+      
+      // Serve static assets from .next/static
+      if (fs.existsSync(staticPath)) {
+        app.use('/_next/static', express.static(staticPath));
+      }
+      
+      // Catch-all handler: send back Next.js's index.html file for client-side routing
+      app.get('*', (req, res) => {
+        // Don't handle API routes
+        if (req.path.startsWith('/api')) {
+          return res.status(404).json({ error: 'API route not found' });
+        }
+        
+        const indexPath = path.join(standaloneClientPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+          res.sendFile(indexPath);
+        } else {
+          res.status(404).send('Next.js app not found. Please ensure the build completed successfully.');
+        }
+      });
+    } else {
+      console.warn('Next.js standalone client path not found:', standaloneClientPath);
     }
   } else {
+    console.warn('Next.js standalone build not found. Falling back to static assets only.');
     // Fallback: serve static assets from .next
     if (fs.existsSync(staticPath)) {
       app.use('/_next/static', express.static(staticPath));
     }
+    
+    // Fallback catch-all
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API route not found' });
+      }
+      res.status(404).send('Next.js app not built. Please run: npm run build');
+    });
   }
-  
-  // For API routes, they're already handled above
-  // For frontend routes, Next.js should handle them via its own server
-  // In a combined deployment, you might want to proxy or serve from Express
 }
 
 const HOST = process.env.HOST || '0.0.0.0';

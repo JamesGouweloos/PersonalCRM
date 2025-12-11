@@ -131,7 +131,9 @@ function EmailRulesContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
+      <Suspense fallback={<div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" />}>
+        <Sidebar />
+      </Suspense>
       <main className={`${sidebarCollapsed ? "ml-16" : "ml-64"} min-w-0 overflow-x-hidden`} style={{ transition: "margin-left 0.3s" }}>
         <Header title="Email Rules" subtitle="Automate email processing with custom rules" />
         <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">

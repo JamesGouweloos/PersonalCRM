@@ -18,3 +18,7 @@ db.run('DROP INDEX IF EXISTS idx_contacts_email_unique', (err) => {
   process.exit(0);
 });
 
+
+
+
+

@@ -168,9 +168,9 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className="ml-64 min-w-0 overflow-x-hidden">
         <Header title="Analytics" subtitle="Track your sales performance" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
           {/* Key Metrics */}
           <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="bg-card">

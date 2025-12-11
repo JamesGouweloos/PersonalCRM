@@ -46,9 +46,11 @@ export interface Lead {
   contactId: string
   source: LeadSource
   status: LeadStatus
-  assignedTo: "linda" | "me"
+  assignedTo: "linda" | "James"
   notes?: string
   value?: number
+  conversationId?: string
+  clientName?: string
   createdAt: string
   updatedAt: string
   lastContactedAt?: string
@@ -80,7 +82,7 @@ export interface Activity {
   opportunityId?: string
   leadId?: string // Legacy support
   contactId: string
-  type: "email_sent" | "email_received" | "call_made" | "call_received" | "status_changed" | "note_added" | "follow_up_scheduled" | "social_dm" | "social_comment" | "social_lead_form" | "webform_submission"
+  type: "email_sent" | "email_received" | "call_made" | "call_received" | "status_changed" | "note_added" | "follow_up_scheduled" | "social_dm" | "social_comment" | "social_lead_form" | "webform_submission" | "teams_message" | "teams_call" | "written_communication"
   description: string
   direction?: "inbound" | "outbound"
   user: string
@@ -150,4 +152,28 @@ export interface Dispute {
   createdBy: string
   createdAt: string
   updatedAt: string
+}
+
+export interface CalendarEvent {
+  id: string
+  external_id?: string
+  subject: string
+  body?: string
+  start_datetime: string
+  end_datetime: string
+  location?: string
+  is_all_day: boolean
+  attendees?: Array<{ email: string; name?: string; type?: string }>
+  organizer_email?: string
+  follow_up_id?: string
+  contact_id?: string
+  opportunity_id?: string
+  lead_id?: string
+  status: "tentative" | "confirmed" | "cancelled" | "completed"
+  contact_name?: string
+  contact_email?: string
+  follow_up_type?: string
+  follow_up_completed?: boolean
+  created_at: string
+  updated_at: string
 }

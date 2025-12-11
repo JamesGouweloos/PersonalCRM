@@ -100,9 +100,9 @@ export default function CategoryMappingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className="ml-64 min-w-0 overflow-x-hidden">
         <Header title="Category Mappings" subtitle="Map Outlook categories to CRM fields" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/email-rules">

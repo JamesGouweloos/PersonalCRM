@@ -599,7 +599,7 @@ router.post('/reprocess', async (req, res) => {
 // Get synced emails
 router.get('/', (req, res) => {
   const db = getDB();
-  const { contactId, opportunityId, contactType, limit = 50, offset = 0 } = req.query;
+  const { contactId, opportunityId, contactType, conversation_id, limit = 50, offset = 0 } = req.query;
 
   let query = `
     SELECT c.*, ct.name as contact_name, ct.email as contact_email, ct.contact_type
@@ -624,7 +624,20 @@ router.get('/', (req, res) => {
     params.push(contactType);
   }
 
-  query += ' ORDER BY c.occurred_at DESC LIMIT ? OFFSET ?';
+  if (conversation_id) {
+    query += ' AND c.conversation_id = ?';
+    params.push(conversation_id);
+  }
+
+  // If filtering by conversation_id, sort oldest first (for thread view)
+  // Otherwise, sort newest first (for inbox view)
+  if (conversation_id) {
+    query += ' ORDER BY c.occurred_at ASC';
+  } else {
+    query += ' ORDER BY c.occurred_at DESC';
+  }
+  
+  query += ' LIMIT ? OFFSET ?';
   params.push(parseInt(limit), parseInt(offset));
 
   db.all(query, params, (err, rows) => {
@@ -634,6 +647,66 @@ router.get('/', (req, res) => {
     }
     res.json(rows);
   });
+});
+
+// Send email (reply)
+router.post('/send', async (req, res) => {
+  try {
+    const db = getDB();
+    const { to, subject, body, inReplyTo, conversationId } = req.body;
+
+    if (!to || !subject || !body) {
+      return res.status(400).json({ error: 'To, subject, and body are required' });
+    }
+
+    // Get valid access token
+    let accessToken;
+    try {
+      accessToken = await getValidAccessToken(db);
+    } catch (tokenError) {
+      return res.status(401).json({ 
+        error: tokenError.message || 'Authentication failed. Please reconnect your Outlook account.',
+        requiresReconnect: true
+      });
+    }
+
+    // Send email via Outlook service
+    const result = await outlookService.sendEmail(accessToken, {
+      to,
+      subject,
+      body,
+      inReplyTo,
+      conversationId
+    });
+
+    // Optionally save the sent email to communications table
+    // This helps track sent emails in the conversation thread
+    if (conversationId) {
+      db.run(
+        `INSERT INTO communications 
+         (type, subject, body, from_email, to_email, conversation_id, direction, occurred_at, source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)`,
+        ['email', subject, body, result.userEmail || 'me', to, conversationId, 'outbound', 'outlook'],
+        (err) => {
+          if (err) {
+            console.error('Error saving sent email to database:', err);
+          }
+        }
+      );
+    }
+
+    res.json({ 
+      success: true, 
+      messageId: result.messageId,
+      message: 'Email sent successfully'
+    });
+  } catch (error) {
+    console.error('Error sending email:', error);
+    res.status(500).json({ 
+      error: error.message || 'Failed to send email',
+      details: error.code || error.statusCode
+    });
+  }
 });
 
 module.exports = router;

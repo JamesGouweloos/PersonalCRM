@@ -56,9 +56,9 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className="ml-64 min-w-0 overflow-x-hidden">
         <Header title="Dashboard" subtitle="Overview of your sales pipeline" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <StatsCard
               title="Total Leads"

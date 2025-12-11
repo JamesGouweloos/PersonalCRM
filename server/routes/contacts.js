@@ -47,53 +47,63 @@ router.post('/', (req, res) => {
   const db = getDB();
   const { name, email, phone, company, title, notes, contact_type } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
-  }
+  // Normalize email for duplicate checking if provided (lowercase, trim)
+  const normalizedEmail = email ? email.toLowerCase().trim() : null;
 
-  // Normalize email for duplicate checking (lowercase, trim)
-  const normalizedEmail = email.toLowerCase().trim();
-
-  // Check for duplicate by email (case-insensitive)
-  db.get(
-    'SELECT * FROM contacts WHERE LOWER(TRIM(email)) = ?',
-    [normalizedEmail],
-    (err, existing) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      if (existing) {
-        // Return existing contact instead of creating duplicate
-        return res.status(200).json({
-          id: existing.id,
-          name: existing.name,
-          email: existing.email,
-          phone: existing.phone,
-          company: existing.company,
-          title: existing.title,
-          notes: existing.notes,
-          contact_type: existing.contact_type,
-          created_at: existing.created_at,
-          updated_at: existing.updated_at,
-          duplicate: true,
-          message: 'Contact with this email already exists'
-        });
-      }
-
-      // Create new contact if no duplicate found
-      db.run(
-        'INSERT INTO contacts (name, email, phone, company, title, notes, contact_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [name, email, phone, company, title, notes, contact_type || 'Other'],
-        function(insertErr) {
-          if (insertErr) {
-            return res.status(500).json({ error: insertErr.message });
-          }
-          res.json({ id: this.lastID, ...req.body });
+  // Check for duplicate by email only if email is provided (case-insensitive)
+  if (normalizedEmail) {
+    db.get(
+      'SELECT * FROM contacts WHERE email IS NOT NULL AND LOWER(TRIM(email)) = ?',
+      [normalizedEmail],
+      (err, existing) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
         }
-      );
-    }
-  );
+
+        if (existing) {
+          // Return existing contact instead of creating duplicate
+          return res.status(200).json({
+            id: existing.id,
+            name: existing.name,
+            email: existing.email,
+            phone: existing.phone,
+            company: existing.company,
+            title: existing.title,
+            notes: existing.notes,
+            contact_type: existing.contact_type,
+            created_at: existing.created_at,
+            updated_at: existing.updated_at,
+            duplicate: true,
+            message: 'Contact with this email already exists'
+          });
+        }
+
+        // Create new contact if no duplicate found
+        db.run(
+          'INSERT INTO contacts (name, email, phone, company, title, notes, contact_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [name, normalizedEmail || null, phone || null, company || null, title || null, notes || null, contact_type || 'Other'],
+          function(insertErr) {
+            if (insertErr) {
+              return res.status(500).json({ error: insertErr.message });
+            }
+            res.json({ id: this.lastID, ...req.body });
+          }
+        );
+      }
+    );
+  } else {
+    // No email provided, create contact without duplicate check
+    db.run(
+      'INSERT INTO contacts (name, email, phone, company, title, notes, contact_type) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, null, phone || null, company || null, title || null, notes || null, contact_type || 'Other'],
+      function(insertErr) {
+        if (insertErr) {
+          return res.status(500).json({ error: insertErr.message });
+        }
+        res.json({ id: this.lastID, ...req.body });
+      }
+    );
+  }
 });
 
 // Update contact
@@ -109,12 +119,8 @@ router.put('/:id', (req, res) => {
       return res.status(400).json({ error: 'Invalid contact ID' });
     }
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-
-  // Normalize email for duplicate checking (lowercase, trim)
-  const normalizedEmail = email.toLowerCase().trim();
+    // Normalize email for duplicate checking if provided (lowercase, trim)
+    const normalizedEmail = email ? email.toLowerCase().trim() : null;
 
   // Helper function to perform the update
   const performUpdate = () => {
@@ -127,7 +133,7 @@ router.put('/:id', (req, res) => {
     // Prepare values, handling null/undefined
     const updateValues = [
       name || null,
-      email,
+      normalizedEmail || null,
       phone || null,
       company || null,
       title || null,
@@ -186,10 +192,10 @@ router.put('/:id', (req, res) => {
     const currentNormalizedEmail = currentContact.email ? currentContact.email.toLowerCase().trim() : null;
     const emailChanged = currentNormalizedEmail !== normalizedEmail;
 
-    // If email is being changed, check for duplicates
-    if (emailChanged) {
+    // If email is being changed and a new email is provided, check for duplicates
+    if (emailChanged && normalizedEmail) {
       db.get(
-        'SELECT * FROM contacts WHERE LOWER(TRIM(email)) = ? AND id != ?',
+        'SELECT * FROM contacts WHERE email IS NOT NULL AND LOWER(TRIM(email)) = ? AND id != ?',
         [normalizedEmail, contactId],
         (dupErr, duplicate) => {
           if (dupErr) {
@@ -215,7 +221,7 @@ router.put('/:id', (req, res) => {
         }
       );
     } else {
-      // Email not changed, proceed with update
+      // Email not changed or being removed, proceed with update
       performUpdate();
     }
   });

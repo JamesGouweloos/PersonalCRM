@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { emailsAPI, contactsAPI, opportunitiesAPI, communicationsAPI, leadsAPI } from "@/lib/api"
 import {
   isEmailRead,
@@ -70,6 +72,7 @@ type FilterType = 'all' | 'unread' | 'inbound' | 'outbound' | 'has_opportunity' 
 export default function InboxPage() {
   const searchParams = useSearchParams()
   const contactTypeFilter = searchParams.get('type') || 'all'
+  const conversationIdFilter = searchParams.get('conversation_id') || null
   
   const [emails, setEmails] = useState<Email[]>([])
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
@@ -173,6 +176,9 @@ export default function InboxPage() {
       if (contactTypeFilter && contactTypeFilter !== 'all') {
         params.contactType = contactTypeFilter
       }
+      if (conversationIdFilter) {
+        params.conversation_id = conversationIdFilter
+      }
       const response = await emailsAPI.getAll(params)
       const loadedEmails = response.data || []
       setEmails(loadedEmails)
@@ -194,7 +200,7 @@ export default function InboxPage() {
 
   useEffect(() => {
     loadEmails()
-  }, [contactTypeFilter])
+  }, [contactTypeFilter, conversationIdFilter])
 
   const loadContacts = async () => {
     try {
@@ -487,13 +493,13 @@ export default function InboxPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className={sidebarCollapsed ? "ml-16" : "ml-64"} style={{ transition: "margin-left 0.3s" }}>
+      <main className={`${sidebarCollapsed ? "ml-16" : "ml-64"} min-w-0 overflow-x-hidden`} style={{ transition: "margin-left 0.3s" }}>
         <Header title="Inbox" subtitle="Manage your emails and CRM workflow" />
-        <div className="p-6 space-y-4">
+        <div className="p-4 sm:p-6 space-y-4 max-w-full overflow-x-hidden">
           {/* Analytics Panel */}
           <Card>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold">{analytics.total}</div>
                   <div className="text-sm text-muted-foreground">Total</div>
@@ -951,6 +957,9 @@ export default function InboxPage() {
               onCreateOpportunity={() => {
                 setShowCreateOpportunityDialog(true)
               }}
+              onReplySent={() => {
+                loadEmails()
+              }}
             />
           )}
         </div>
@@ -1012,13 +1021,57 @@ function EmailDetailModal({
   onCreateContact: () => void
   onCreateLead: () => void
   onCreateOpportunity: () => void
+  onReplySent?: () => void
 }) {
+  const [conversationEmails, setConversationEmails] = useState<Email[]>([])
+  const [loadingConversation, setLoadingConversation] = useState(true)
+  const [showReplyDialog, setShowReplyDialog] = useState(false)
+  const [replyTo, setReplyTo] = useState('')
+  const [replySubject, setReplySubject] = useState('')
+  const [replyBody, setReplyBody] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
   const contact = email.contact_id ? contacts[email.contact_id] : null
   const opportunity = email.opportunity_id ? opportunities[email.opportunity_id] : null
 
+  useEffect(() => {
+    const loadConversation = async () => {
+      if (!email.conversation_id) {
+        // No conversation_id, just show this single email
+        setConversationEmails([email])
+        setLoadingConversation(false)
+        return
+      }
+
+      try {
+        setLoadingConversation(true)
+        const response = await emailsAPI.getAll({ conversation_id: email.conversation_id })
+        const conversationEmails = response.data || []
+        // Sort by date (oldest first, like traditional email clients)
+        conversationEmails.sort((a: Email, b: Email) => 
+          new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime()
+        )
+        setConversationEmails(conversationEmails.length > 0 ? conversationEmails : [email])
+      } catch (error) {
+        console.error("Error loading conversation:", error)
+        // Fallback to single email if error
+        setConversationEmails([email])
+      } finally {
+        setLoadingConversation(false)
+      }
+    }
+
+    loadConversation()
+  }, [email.id, email.conversation_id])
+
+  const getEmailDirection = (email: Email) => {
+    // Simple heuristic - in a real app, you'd compare with user's email
+    return email.from_email.includes("@") ? "inbound" : "outbound"
+  }
+
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <>
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto w-[95vw]">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -1026,6 +1079,11 @@ function EmailDetailModal({
                 <Circle className="h-2 w-2 fill-primary text-primary shrink-0 mt-2" />
               )}
               <DialogTitle className="text-lg truncate">{email.subject || "(No Subject)"}</DialogTitle>
+              {conversationEmails.length > 1 && (
+                <Badge variant="outline" className="ml-2">
+                  {conversationEmails.length} {conversationEmails.length === 1 ? 'message' : 'messages'}
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -1044,89 +1102,253 @@ function EmailDetailModal({
             </div>
           </div>
         </DialogHeader>
-        <div className="space-y-4">
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 pb-4 border-b">
-            {!email.contact_id && (
+
+        {loadingConversation ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="space-y-0">
+            {/* Action Buttons - Show once at top */}
+            <div className="flex flex-wrap gap-2 pb-4 border-b mb-4">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => {
+                  const replyToEmail = email.from_email
+                  const replySubjectText = email.subject?.startsWith('Re:') ? email.subject : `Re: ${email.subject || '(No Subject)'}`
+                  setReplyTo(replyToEmail)
+                  setReplySubject(replySubjectText)
+                  setReplyBody(`\n\n--- Original Message ---\nFrom: ${email.from_email}\nDate: ${format(new Date(email.occurred_at), "PPpp")}\n\n${email.body || ''}`)
+                  setShowReplyDialog(true)
+                }}
+                className="min-w-[120px]"
+              >
+                <Mail className="mr-2 h-4 w-4" />
+                Reply
+              </Button>
+              {!email.contact_id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onCreateContact}
+                  className="flex-1 min-w-[140px]"
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create Contact
+                </Button>
+              )}
+              {email.contact_id && !email.opportunity_id && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onCreateLead}
+                    className="flex-1 min-w-[140px]"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    Send to Lead
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onCreateOpportunity}
+                    className="flex-1 min-w-[140px]"
+                  >
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Send to Opportunity
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Conversation Thread */}
+            <div className="space-y-0">
+              {conversationEmails.map((threadEmail, index) => {
+                const isSelected = threadEmail.id === email.id
+                const direction = getEmailDirection(threadEmail)
+                const threadContact = threadEmail.contact_id ? contacts[threadEmail.contact_id] : null
+                const isLast = index === conversationEmails.length - 1
+
+                return (
+                  <div
+                    key={threadEmail.id}
+                    className={`border-l-2 ${
+                      isSelected 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border'
+                    } pl-4 pb-6 ${!isLast ? 'mb-6 border-b' : ''}`}
+                  >
+                    {/* Email Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-semibold text-foreground truncate">
+                            {threadEmail.from_email}
+                          </p>
+                          {direction === 'inbound' ? (
+                            <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 text-xs">
+                              Inbound
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="bg-green-500/10 text-green-500 text-xs">
+                              Outbound
+                            </Badge>
+                          )}
+                          {isSelected && (
+                            <Badge variant="outline" className="text-xs">
+                              Current
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span>To: {threadEmail.to_email || '(No recipient)'}</span>
+                          <span>{format(new Date(threadEmail.occurred_at), "PPpp")}</span>
+                        </div>
+                        {threadContact && (
+                          <div className="mt-1">
+                            <Link
+                              href={`/contacts`}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              Contact: {threadContact.name}
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Email Body */}
+                    <div className="prose prose-sm max-w-none text-sm text-foreground bg-card rounded-lg p-4 border min-h-[100px]">
+                      {threadEmail.body ? (
+                        <div 
+                          className="email-body-content break-words"
+                          dangerouslySetInnerHTML={{ __html: threadEmail.body }}
+                          style={{ 
+                            wordBreak: 'break-word',
+                            overflowWrap: 'break-word',
+                            maxWidth: '100%',
+                            overflow: 'auto'
+                          }}
+                        />
+                      ) : (
+                        <div className="text-muted-foreground italic">No content available</div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reply Dialog - Separate dialog outside main dialog */}
+      <Dialog open={showReplyDialog} onOpenChange={setShowReplyDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Reply to Email</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="reply-to">To</Label>
+                <Input
+                  id="reply-to"
+                  value={replyTo}
+                  onChange={(e) => setReplyTo(e.target.value)}
+                  disabled
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="reply-subject">Subject</Label>
+                <Input
+                  id="reply-subject"
+                  value={replySubject}
+                  onChange={(e) => setReplySubject(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="reply-body">Message</Label>
+                <Textarea
+                  id="reply-body"
+                  value={replyBody}
+                  onChange={(e) => setReplyBody(e.target.value)}
+                  className="mt-1 min-h-[300px]"
+                  placeholder="Type your reply here..."
+                />
+              </div>
+            </div>
+            <DialogFooter>
               <Button
                 variant="outline"
-                size="sm"
-                onClick={onCreateContact}
-                className="flex-1 min-w-[140px]"
+                onClick={() => {
+                  setShowReplyDialog(false)
+                  setReplyTo('')
+                  setReplySubject('')
+                  setReplyBody('')
+                }}
               >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Create Contact
+                Cancel
               </Button>
-            )}
-            {email.contact_id && !email.opportunity_id && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onCreateLead}
-                  className="flex-1 min-w-[140px]"
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  Send to Lead
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onCreateOpportunity}
-                  className="flex-1 min-w-[140px]"
-                >
-                  <Briefcase className="mr-2 h-4 w-4" />
-                  Send to Opportunity
-                </Button>
-              </>
-            )}
-          </div>
-
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">From</p>
-            <p className="text-sm text-foreground">{email.from_email}</p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">To</p>
-            <p className="text-sm text-foreground">{email.to_email}</p>
-          </div>
-          {contact && (
-            <div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Contact</p>
-              <Link
-                href={`/contacts`}
-                className="text-sm text-primary hover:underline"
+              <Button
+                onClick={async () => {
+                  if (!replyTo || !replyBody.trim()) {
+                    alert('Please fill in the recipient and message')
+                    return
+                  }
+                  try {
+                    setSendingReply(true)
+                    await emailsAPI.sendReply({
+                      to: replyTo,
+                      subject: replySubject,
+                      body: replyBody,
+                      inReplyTo: email.message_id || email.external_id,
+                      conversationId: email.conversation_id
+                    })
+                    alert('Reply sent successfully!')
+                    setShowReplyDialog(false)
+                    setReplyTo('')
+                    setReplySubject('')
+                    setReplyBody('')
+                    // Reload emails to show the sent reply
+                    onReplySent?.()
+                    // Also reload the conversation
+                    if (email.conversation_id) {
+                      const response = await emailsAPI.getAll({ conversation_id: email.conversation_id })
+                      const conversationEmails = response.data || []
+                      conversationEmails.sort((a: Email, b: Email) => 
+                        new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime()
+                      )
+                      setConversationEmails(conversationEmails.length > 0 ? conversationEmails : [email])
+                    }
+                  } catch (error: any) {
+                    console.error('Error sending reply:', error)
+                    alert('Failed to send reply: ' + (error.response?.data?.error || error.message))
+                  } finally {
+                    setSendingReply(false)
+                  }
+                }}
+                disabled={sendingReply}
               >
-                {contact.name}
-              </Link>
-            </div>
-          )}
-          {opportunity && (
-            <div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Opportunity</p>
-              <Link
-                href={`/opportunities/${email.opportunity_id}`}
-                className="text-sm text-primary hover:underline"
-              >
-                {opportunity.title}
-              </Link>
-            </div>
-          )}
-          <div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">Date</p>
-            <p className="text-sm text-foreground">
-              {format(new Date(email.occurred_at), "PPpp")}
-            </p>
-          </div>
-          <div className="pt-4 border-t">
-            <p className="text-sm font-medium text-muted-foreground mb-2">Message</p>
-            <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap">
-              {email.body || "No content available"}
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+                {sendingReply ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Send Reply
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+    </>
   )
 }
 

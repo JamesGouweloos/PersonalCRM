@@ -74,6 +74,10 @@ function migrateDatabaseSync() {
     promises.push(addColumnIfNotExistsSync('leads', 'origin_list', 'TEXT'));
     promises.push(addColumnIfNotExistsSync('leads', 'linked_opportunity_id', 'INTEGER'));
     
+    // Add missing columns to follow_ups table for calendar integration
+    promises.push(addColumnIfNotExistsSync('follow_ups', 'calendar_event_id', 'TEXT'));
+    promises.push(addColumnIfNotExistsSync('follow_ups', 'opportunity_id', 'INTEGER'));
+    
     // Add missing columns to opportunities table
     promises.push(addColumnIfNotExistsSync('opportunities', 'origin_form_id', 'TEXT'));
     promises.push(addColumnIfNotExistsSync('opportunities', 'origin_campaign_id', 'TEXT'));
@@ -144,7 +148,7 @@ function initialize() {
       source TEXT NOT NULL CHECK(source IN ('webform', 'cold_outreach', 'social', 'previous_enquiry', 'previous_client', 'forwarded', 'email')),
       sub_source TEXT NOT NULL,
       linked_opportunity_id INTEGER,
-      assigned_to TEXT NOT NULL DEFAULT 'me',
+      assigned_to TEXT NOT NULL DEFAULT 'James',
       value REAL,
       currency TEXT DEFAULT 'USD',
       probability INTEGER DEFAULT 0,
@@ -229,15 +233,19 @@ function initialize() {
       contact_id INTEGER NOT NULL,
       source TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'new',
-      assigned_to TEXT DEFAULT 'me',
+      assigned_to TEXT DEFAULT 'James',
       notes TEXT,
       value REAL,
+      conversation_id TEXT,
       last_contacted_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (contact_id) REFERENCES contacts(id)
     )
   `);
+  
+  // Create index on conversation_id for leads if it doesn't exist
+  database.run(`CREATE INDEX IF NOT EXISTS idx_leads_conversation_id ON leads(conversation_id)`);
 
   // Follow-ups table
   database.run(`
@@ -274,7 +282,7 @@ function initialize() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       opportunity_id INTEGER,
       contact_id INTEGER NOT NULL,
-      type TEXT NOT NULL CHECK(type IN ('email_sent', 'email_received', 'call_made', 'call_received', 'status_changed', 'note_added', 'follow_up_scheduled', 'social_dm', 'social_comment', 'social_lead_form', 'webform_submission')),
+      type TEXT NOT NULL CHECK(type IN ('email_sent', 'email_received', 'call_made', 'call_received', 'status_changed', 'note_added', 'follow_up_scheduled', 'social_dm', 'social_comment', 'social_lead_form', 'webform_submission', 'teams_message', 'teams_call', 'written_communication')),
       description TEXT NOT NULL,
       direction TEXT CHECK(direction IN ('inbound', 'outbound')),
       user TEXT NOT NULL,

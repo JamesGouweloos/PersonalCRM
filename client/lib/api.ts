@@ -59,6 +59,17 @@ export const emailsAPI = {
   getStatus: () => api.get('/emails/status'),
   disconnect: () => api.post('/emails/disconnect'),
   reprocess: () => api.post('/emails/reprocess'),
+  sendReply: (data: { to: string; subject: string; body: string; inReplyTo?: string; conversationId?: string }) => api.post('/emails/send', data),
+};
+
+// Call Logs API
+export const callLogsAPI = {
+  getAll: (params?: any) => api.get('/call-logs', { params }),
+  getOne: (id: string) => api.get(`/call-logs/${id}`),
+  create: (data: any) => api.post('/call-logs', data),
+  update: (id: string, data: any) => api.put(`/call-logs/${id}`, data),
+  delete: (id: string) => api.delete(`/call-logs/${id}`),
+  matchUnknown: () => api.post('/call-logs/match-unknown'),
 };
 
 // Opportunities API
@@ -92,6 +103,37 @@ export const emailRulesAPI = {
   createCategory: (data: any) => api.post('/email-rules/categories', data),
   updateCategory: (id: string, data: any) => api.put(`/email-rules/categories/${id}`, data),
   deleteCategory: (id: string) => api.delete(`/email-rules/categories/${id}`),
+};
+
+// Agency Interactions API
+export const agencyInteractionsAPI = {
+  getAll: (params?: any) => api.get('/agency-interactions', { params }),
+  getStats: (params?: any) => api.get('/agency-interactions/stats', { params }),
+  create: (data: any) => api.post('/agency-interactions', data),
+  update: (id: string, data: any) => api.put(`/agency-interactions/${id}`, data),
+  delete: (id: string) => api.delete(`/agency-interactions/${id}`),
+};
+
+// Calendar API
+export const calendarAPI = {
+  sync: (params?: { startDate?: string; endDate?: string }) => api.post('/calendar/sync', params),
+  getAll: (params?: any) => api.get('/calendar', { params }),
+  create: (data: any) => api.post('/calendar', data),
+  update: (id: string, data: any) => api.put(`/calendar/${id}`, data),
+  delete: (id: string) => api.delete(`/calendar/${id}`),
+};
+
+// Call Logs Upload API
+export const callLogsUploadAPI = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/call-logs-upload/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };
 
 export default api;

@@ -115,7 +115,7 @@ router.post('/opportunities', (req, res) => {
     campaign_id,
     lead_id,
     origin_list,
-    user = 'me'
+    user = 'James'
   } = req.body;
   
   // Use notes if description is not provided
@@ -146,7 +146,7 @@ router.post('/opportunities', (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       title, contact_id, stage_id, source, sub_source, linked_opportunity_id || null,
-      assigned_to || 'me', value, currency || 'USD', probability || 0, expected_close_date,
+      assigned_to || 'James', value, currency || 'USD', probability || 0, expected_close_date,
       finalDescription, form_id, form_submission_time, campaign_id, lead_id, origin_list
     ],
     function(err) {
@@ -205,7 +205,7 @@ router.put('/opportunities/:id', (req, res) => {
     description,
     status,
     reversed_reason,
-    user = 'me'
+    user = 'James'
   } = req.body;
 
   // First, get current values for audit trail

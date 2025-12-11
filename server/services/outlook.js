@@ -33,6 +33,8 @@ function getAuthUrl() {
   const authCodeUrlParameters = {
     scopes: [
       'https://graph.microsoft.com/Mail.Read', 
+      'https://graph.microsoft.com/Mail.Send', // Required for sending emails
+      'https://graph.microsoft.com/Calendars.ReadWrite', // Required for calendar events
       'https://graph.microsoft.com/User.Read',
       'offline_access' // Required for refresh tokens that don't expire
     ],
@@ -52,6 +54,8 @@ async function getAccessTokenFromCode(authCode) {
     code: authCode,
     scopes: [
       'https://graph.microsoft.com/Mail.Read', 
+      'https://graph.microsoft.com/Mail.Send', // Required for sending emails
+      'https://graph.microsoft.com/Calendars.ReadWrite', // Required for calendar events
       'https://graph.microsoft.com/User.Read',
       'offline_access' // Required for refresh tokens that don't expire
     ],
@@ -77,6 +81,8 @@ async function refreshAccessToken(refreshToken) {
     refreshToken: refreshToken,
     scopes: [
       'https://graph.microsoft.com/Mail.Read', 
+      'https://graph.microsoft.com/Mail.Send', // Required for sending emails
+      'https://graph.microsoft.com/Calendars.ReadWrite', // Required for calendar events
       'https://graph.microsoft.com/User.Read',
       'offline_access' // Required for refresh tokens that don't expire
     ],
@@ -211,6 +217,234 @@ async function getUserProfile(accessToken) {
   }
 }
 
+async function sendEmail(accessToken, { to, subject, body, inReplyTo, conversationId }) {
+  try {
+    const client = getGraphClient(accessToken);
+    
+    // Get user's email address
+    const userProfile = await getUserProfile(accessToken);
+    const userEmail = userProfile.mail || userProfile.userPrincipalName;
+    
+    // Build message object for Microsoft Graph API
+    const message = {
+      subject: subject,
+      body: {
+        contentType: 'HTML',
+        content: body.replace(/\n/g, '<br>')
+      },
+      toRecipients: [
+        {
+          emailAddress: {
+            address: to
+          }
+        }
+      ]
+    };
+
+    // If replying, add references for proper threading
+    if (inReplyTo) {
+      message.internetMessageHeaders = [
+        {
+          name: 'In-Reply-To',
+          value: `<${inReplyTo}>`
+        },
+        {
+          name: 'References',
+          value: `<${inReplyTo}>`
+        }
+      ];
+      
+      // If conversationId exists, use it for threading
+      if (conversationId) {
+        message.conversationId = conversationId;
+      }
+    }
+
+    // Send email via Microsoft Graph API
+    // The API expects { message: {...} } format
+    await client
+      .api('/me/sendMail')
+      .post({ message: message });
+
+    return {
+      success: true,
+      messageId: 'sent',
+      userEmail
+    };
+  } catch (error) {
+    console.error('Error sending email:', error);
+    
+    // Provide clearer error messages
+    if (error.statusCode === 403 || error.code === 'ErrorAccessDenied' || 
+        (error.message && error.message.includes('Access is denied'))) {
+      throw new Error('Permission denied. Please ensure Mail.Send permission is granted in Azure and reconnect your account.');
+    }
+    if (error.statusCode === 401 || error.code === 'InvalidAuthenticationToken') {
+      throw new Error('Authentication failed. Please reconnect your Outlook account.');
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * Fetch calendar events from Outlook
+ */
+async function fetchCalendarEvents(accessToken, startDate = null, endDate = null) {
+  try {
+    const client = getGraphClient(accessToken);
+    
+    // Default to current month if dates not provided
+    const start = startDate || new Date().toISOString();
+    const end = endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    
+    const response = await client
+      .api('/me/calendar/events')
+      .select('id,subject,body,start,end,location,isAllDay,attendees,organizer,webLink')
+      .filter(`start/dateTime ge '${start}' and end/dateTime le '${end}'`)
+      .orderby('start/dateTime asc')
+      .get();
+    
+    return (response.value || []).map(event => ({
+      id: event.id,
+      subject: event.subject || '(No Subject)',
+      body: event.body?.content || '',
+      startDateTime: event.start?.dateTime || event.start?.date,
+      endDateTime: event.end?.dateTime || event.end?.date,
+      location: event.location?.displayName || null,
+      isAllDay: event.isAllDay || false,
+      attendees: (event.attendees || []).map(a => ({
+        email: a.emailAddress?.address,
+        name: a.emailAddress?.name,
+        type: a.type
+      })),
+      organizer: event.organizer?.emailAddress?.address || null,
+      webLink: event.webLink || null
+    }));
+  } catch (error) {
+    console.error('Error fetching calendar events:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a calendar event in Outlook
+ */
+async function createCalendarEvent(accessToken, { subject, body, startDateTime, endDateTime, location, isAllDay, attendees, followUpId }) {
+  try {
+    const client = getGraphClient(accessToken);
+    
+    const event = {
+      subject: subject,
+      body: {
+        contentType: 'HTML',
+        content: body || ''
+      },
+      start: {
+        dateTime: startDateTime,
+        timeZone: 'UTC'
+      },
+      end: {
+        dateTime: endDateTime,
+        timeZone: 'UTC'
+      },
+      isAllDay: isAllDay || false
+    };
+    
+    if (location) {
+      event.location = {
+        displayName: location
+      };
+    }
+    
+    if (attendees && attendees.length > 0) {
+      event.attendees = attendees.map(email => ({
+        emailAddress: {
+          address: email,
+          name: email
+        },
+        type: 'required'
+      }));
+    }
+    
+    const createdEvent = await client
+      .api('/me/calendar/events')
+      .post(event);
+    
+    return {
+      id: createdEvent.id,
+      subject: createdEvent.subject,
+      webLink: createdEvent.webLink,
+      startDateTime: createdEvent.start?.dateTime || createdEvent.start?.date,
+      endDateTime: createdEvent.end?.dateTime || createdEvent.end?.date
+    };
+  } catch (error) {
+    console.error('Error creating calendar event:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update a calendar event in Outlook
+ */
+async function updateCalendarEvent(accessToken, eventId, updates) {
+  try {
+    const client = getGraphClient(accessToken);
+    
+    const event = {};
+    if (updates.subject !== undefined) event.subject = updates.subject;
+    if (updates.body !== undefined) {
+      event.body = {
+        contentType: 'HTML',
+        content: updates.body
+      };
+    }
+    if (updates.startDateTime !== undefined) {
+      event.start = {
+        dateTime: updates.startDateTime,
+        timeZone: 'UTC'
+      };
+    }
+    if (updates.endDateTime !== undefined) {
+      event.end = {
+        dateTime: updates.endDateTime,
+        timeZone: 'UTC'
+      };
+    }
+    if (updates.location !== undefined) {
+      event.location = {
+        displayName: updates.location
+      };
+    }
+    if (updates.isAllDay !== undefined) event.isAllDay = updates.isAllDay;
+    
+    const updatedEvent = await client
+      .api(`/me/calendar/events/${eventId}`)
+      .patch(event);
+    
+    return updatedEvent;
+  } catch (error) {
+    console.error('Error updating calendar event:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a calendar event in Outlook
+ */
+async function deleteCalendarEvent(accessToken, eventId) {
+  try {
+    const client = getGraphClient(accessToken);
+    await client
+      .api(`/me/calendar/events/${eventId}`)
+      .delete();
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting calendar event:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAuthUrl,
   getAccessTokenFromCode,
@@ -220,6 +454,11 @@ module.exports = {
   fetchEmailFolders,
   fetchFlaggedEmails,
   getUserProfile,
+  sendEmail,
+  fetchCalendarEvents,
+  createCalendarEvent,
+  updateCalendarEvent,
+  deleteCalendarEvent,
 };
 
 

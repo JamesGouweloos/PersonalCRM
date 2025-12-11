@@ -59,7 +59,7 @@ export function ContactFormDialog({ open, onOpenChange, existingContact, onSave 
     const contact: Contact = {
       id: existingContact?.id || "",
       name,
-      email,
+      email: email || undefined,
       phone: phone || undefined,
       company: company || undefined,
       notes: notes || undefined,
@@ -75,7 +75,8 @@ export function ContactFormDialog({ open, onOpenChange, existingContact, onSave 
       
       if (saved) {
         // Check if this was a duplicate (saved contact has same email but different ID)
-        if (!existingContact && saved.email.toLowerCase().trim() === email.toLowerCase().trim() && saved.id !== contact.id) {
+        // Only check for duplicates if email was provided
+        if (!existingContact && email && saved.email && saved.email.toLowerCase().trim() === email.toLowerCase().trim() && saved.id !== contact.id) {
           setDuplicateError("A contact with this email already exists. The existing contact was loaded.")
           // Still close and refresh after a moment
           setTimeout(() => {
@@ -121,7 +122,7 @@ export function ContactFormDialog({ open, onOpenChange, existingContact, onSave 
               </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-foreground">
-                Email *
+                Email
               </Label>
               <Input
                 id="email"
@@ -131,7 +132,6 @@ export function ContactFormDialog({ open, onOpenChange, existingContact, onSave 
                   setEmail(e.target.value)
                   setDuplicateError(null)
                 }}
-                required
                 className="bg-secondary"
               />
               {duplicateError && (

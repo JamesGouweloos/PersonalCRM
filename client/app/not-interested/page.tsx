@@ -56,24 +56,24 @@ export default function NotInterestedPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className="ml-64 min-w-0 overflow-x-hidden">
         <Header title="Not Interested" subtitle="Leads marked as not interested at this time" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
           {/* Filters */}
-          <div className="mb-6 flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
+          <div className="mb-6 flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-4">
+            <div className="relative flex-1 min-w-0 max-w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search leads..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-secondary pl-10"
+                className="bg-secondary pl-10 w-full"
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
               <Select value={filterSource} onValueChange={(v) => setFilterSource(v as LeadSource | "all")}>
-                <SelectTrigger className="w-[140px] bg-secondary">
+                <SelectTrigger className="w-full sm:w-[140px] bg-secondary">
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
                 <SelectContent>
@@ -90,55 +90,57 @@ export default function NotInterestedPage() {
           </div>
 
           {/* Leads Table */}
-          <div className="rounded-xl border border-border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-muted-foreground">Contact</TableHead>
-                  <TableHead className="text-muted-foreground">Source</TableHead>
-                  <TableHead className="text-muted-foreground">Assigned</TableHead>
-                  <TableHead className="text-muted-foreground">Notes</TableHead>
-                  <TableHead className="text-muted-foreground">Moved</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredLeads.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card w-full overflow-x-auto -mx-4 sm:mx-0">
+            <div className="min-w-[800px]">
+              <Table className="w-full">
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      No leads in the "Not Interested" list.
-                    </TableCell>
+                    <TableHead className="text-muted-foreground min-w-[200px]">Contact</TableHead>
+                    <TableHead className="text-muted-foreground min-w-[100px]">Source</TableHead>
+                    <TableHead className="text-muted-foreground min-w-[100px]">Assigned</TableHead>
+                    <TableHead className="text-muted-foreground min-w-[200px]">Notes</TableHead>
+                    <TableHead className="text-muted-foreground min-w-[120px]">Moved</TableHead>
                   </TableRow>
-                ) : (
-                  filteredLeads.map((lead) => {
-                    const contact = contacts[lead.contactId]
-                    if (!contact) return null
-                    return (
-                      <TableRow key={lead.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium text-foreground">{contact.name}</p>
-                            <p className="text-sm text-muted-foreground">{contact.email}</p>
-                            {contact.company && <p className="text-xs text-muted-foreground">{contact.company}</p>}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{lead.source.replace('_', ' ')}</Badge>
-                        </TableCell>
-                        <TableCell className="capitalize text-foreground">
-                          {lead.assignedTo === "me" ? "Me" : "Linda"}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground max-w-md truncate">
-                          {lead.notes || "-"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDistanceToNow(new Date(lead.updatedAt || lead.createdAt), { addSuffix: true })}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredLeads.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No leads in the "Not Interested" list.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredLeads.map((lead) => {
+                      const contact = contacts[lead.contactId]
+                      if (!contact) return null
+                      return (
+                        <TableRow key={lead.id}>
+                          <TableCell className="min-w-[200px] max-w-[250px]">
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground truncate" title={contact.name}>{contact.name}</p>
+                              <p className="text-sm text-muted-foreground truncate" title={contact.email}>{contact.email}</p>
+                              {contact.company && <p className="text-xs text-muted-foreground truncate" title={contact.company}>{contact.company}</p>}
+                            </div>
+                          </TableCell>
+                          <TableCell className="min-w-[100px]">
+                            <Badge variant="outline" className="whitespace-nowrap">{lead.source.replace('_', ' ')}</Badge>
+                          </TableCell>
+                          <TableCell className="capitalize text-foreground min-w-[100px] whitespace-nowrap">
+                            {lead.assignedTo === "me" ? "Me" : "Linda"}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground min-w-[200px] max-w-[300px] truncate" title={lead.notes || undefined}>
+                            {lead.notes || "-"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground min-w-[120px] whitespace-nowrap">
+                            {formatDistanceToNow(new Date(lead.updatedAt || lead.createdAt), { addSuffix: true })}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
       </main>

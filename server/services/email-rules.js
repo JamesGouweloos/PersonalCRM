@@ -336,7 +336,7 @@ function createOpportunityWithContact(email, params, contactId, db) {
     const source = params.source || 'forwarded';
     const subSource = params.sub_source || 'Email';
     const title = params.title || email.subject || 'New Opportunity';
-    const assignedTo = params.assigned_to || 'me';
+    const assignedTo = params.assigned_to || 'James';
 
     db.run(
       `INSERT INTO opportunities (title, contact_id, source, sub_source, assigned_to, description, status)
@@ -548,6 +548,138 @@ async function markOpportunityWon(email, params, db) {
 }
 
 /**
+ * Create lead from email
+ */
+async function createLead(email, params, db) {
+  return new Promise((resolve, reject) => {
+    const fromEmail = email.from_email || email.from?.emailAddress?.address;
+    
+    if (!fromEmail) {
+      return resolve({ success: false, error: 'No email address found' });
+    }
+
+    // Find contact by email
+    db.get('SELECT id FROM contacts WHERE email = ?', [fromEmail], (err, contact) => {
+      if (err) {
+        return reject(err);
+      }
+
+      if (!contact) {
+        // Create contact first if it doesn't exist
+        return createContact(email, { contact_type: params.contact_type || 'Other' }, db).then(result => {
+          if (!result.success || !result.contactId) {
+            return resolve({ success: false, error: 'Failed to create contact' });
+          }
+          createLeadWithContact(email, params, result.contactId, db).then(resolve).catch(reject);
+        });
+      }
+
+      createLeadWithContact(email, params, contact.id, db).then(resolve).catch(reject);
+    });
+  });
+}
+
+function createLeadWithContact(email, params, contactId, db) {
+  return new Promise((resolve, reject) => {
+    const source = params.source || 'webform';
+    const status = params.status || 'new';
+    const assignedTo = params.assigned_to || 'James';
+    const notes = params.notes || `Lead created from email: ${email.subject || '(No Subject)'}`;
+    const value = params.value || null;
+    const conversationId = email.conversation_id || email.conversationId || null;
+
+    // Check if a lead already exists for this conversation
+    if (conversationId) {
+      db.get(
+        `SELECT id FROM leads WHERE conversation_id = ? AND contact_id = ? LIMIT 1`,
+        [conversationId, contactId],
+        (err, existingLead) => {
+          if (err) {
+            console.error('[Email Rules] Error checking for existing lead:', err);
+            return reject(err);
+          }
+
+          if (existingLead) {
+            console.log(`[Email Rules] Lead ${existingLead.id} already exists for conversation ${conversationId}. Skipping duplicate creation.`);
+            return resolve({ 
+              success: true, 
+              action: 'create_lead', 
+              leadId: existingLead.id,
+              contactId,
+              source,
+              status,
+              skipped: true,
+              reason: 'Lead already exists for this conversation'
+            });
+          }
+
+          // No existing lead for this conversation, create a new one
+          insertLead();
+        }
+      );
+    } else {
+      // No conversation_id, check for recent lead from same contact with same source
+      // This handles cases where conversation_id might not be available
+      db.get(
+        `SELECT id FROM leads 
+         WHERE contact_id = ? 
+         AND source = ?
+         AND created_at > datetime('now', '-7 days')
+         ORDER BY created_at DESC LIMIT 1`,
+        [contactId, source],
+        (err, recentLead) => {
+          if (err) {
+            console.error('[Email Rules] Error checking for recent lead:', err);
+            return reject(err);
+          }
+
+          if (recentLead) {
+            console.log(`[Email Rules] Recent lead ${recentLead.id} exists for contact ${contactId} with source ${source}. Skipping duplicate creation.`);
+            return resolve({ 
+              success: true, 
+              action: 'create_lead', 
+              leadId: recentLead.id,
+              contactId,
+              source,
+              status,
+              skipped: true,
+              reason: 'Recent lead already exists for this contact and source'
+            });
+          }
+
+          // No recent lead, create a new one
+          insertLead();
+        }
+      );
+    }
+
+    function insertLead() {
+      db.run(
+        `INSERT INTO leads (contact_id, source, status, assigned_to, notes, value, conversation_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [contactId, source, status, assignedTo, notes, value, conversationId],
+        function(err) {
+          if (err) {
+            console.error('[Email Rules] Error creating lead:', err);
+            return reject(err);
+          }
+          console.log(`[Email Rules] Created lead ${this.lastID} for contact ${contactId} from email: ${email.subject || email.id}${conversationId ? ` (conversation: ${conversationId})` : ''}`);
+          resolve({ 
+            success: true, 
+            action: 'create_lead', 
+            leadId: this.lastID,
+            contactId,
+            source,
+            status,
+            conversationId
+          });
+        }
+      );
+    }
+  });
+}
+
+/**
  * Create commission snapshot
  */
 async function createCommissionSnapshot(email, params, db) {
@@ -575,7 +707,7 @@ async function createCommissionSnapshot(email, params, db) {
 
         const finalValue = params.final_value || opp.value || 0;
         const commissionableAmount = params.commissionable_amount || finalValue;
-        const owner = params.owner || opp.assigned_to || 'me';
+        const owner = params.owner || opp.assigned_to || 'James';
 
         db.run(
           `INSERT INTO commission_snapshots 

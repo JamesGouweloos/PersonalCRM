@@ -44,3 +44,6 @@ temp-frontend/
 server-error.log
 server-output.log
 
+# Uploads directory
+uploads/
+

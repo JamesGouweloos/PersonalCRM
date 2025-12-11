@@ -24,3 +24,7 @@ db.run('DELETE FROM communications WHERE type = ?', ['email'], function(err) {
   });
 });
 
+
+
+
+

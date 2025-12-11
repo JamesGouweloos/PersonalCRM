@@ -156,6 +156,92 @@ router.put('/:id', (req, res) => {
   );
 });
 
+// Match unknown callers to existing contacts by phone number
+router.post('/match-unknown', (req, res) => {
+  const db = getDB();
+  
+  db.serialize(() => {
+    // Find all call logs with "Unknown" contact names or no contact_id
+    db.all(
+      `SELECT cl.id, cl.phone_number, cl.contact_id, c.name as contact_name
+       FROM call_logs cl
+       LEFT JOIN contacts c ON cl.contact_id = c.id
+       WHERE c.name LIKE '%Unknown%' OR c.name IS NULL OR cl.contact_id IS NULL`,
+      [],
+      (err, callLogs) => {
+        if (err) {
+          console.error('Error fetching call logs:', err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        let matchedCount = 0;
+        let updatedCount = 0;
+        const errors = [];
+
+        const processCallLog = (callLog, index) => {
+          if (index >= callLogs.length) {
+            res.json({
+              success: true,
+              checked: callLogs.length,
+              matched: matchedCount,
+              updated: updatedCount,
+              errors: errors.length > 0 ? errors.slice(0, 10) : []
+            });
+            return;
+          }
+
+          const phoneNumber = callLog.phone_number;
+
+          // Find existing contact with this phone number
+          db.get(
+            'SELECT id, name FROM contacts WHERE phone = ? AND (name NOT LIKE ? AND name IS NOT NULL) LIMIT 1',
+            [phoneNumber, '%Unknown%'],
+            (findErr, existingContact) => {
+              if (findErr) {
+                errors.push(`Error finding contact for ${phoneNumber}: ${findErr.message}`);
+                processCallLog(callLogs[index + 1], index + 1);
+                return;
+              }
+
+              if (existingContact) {
+                // Update call log to link to the existing contact
+                db.run(
+                  'UPDATE call_logs SET contact_id = ? WHERE id = ?',
+                  [existingContact.id, callLog.id],
+                  (updateErr) => {
+                    if (updateErr) {
+                      errors.push(`Error updating call log ${callLog.id}: ${updateErr.message}`);
+                    } else {
+                      matchedCount++;
+                      updatedCount++;
+                    }
+                    processCallLog(callLogs[index + 1], index + 1);
+                  }
+                );
+              } else {
+                // No match found, continue to next
+                processCallLog(callLogs[index + 1], index + 1);
+              }
+            }
+          );
+        };
+
+        if (callLogs.length === 0) {
+          return res.json({
+            success: true,
+            checked: 0,
+            matched: 0,
+            updated: 0,
+            message: 'No call logs to process'
+          });
+        }
+
+        processCallLog(callLogs[0], 0);
+      }
+    );
+  });
+});
+
 module.exports = router;
 
 

@@ -2,6 +2,33 @@ const express = require('express');
 const router = express.Router();
 const { getDB } = require('../database');
 
+// Helper function to extract client name from email body
+function extractClientName(emailBody) {
+  if (!emailBody) return null;
+  
+  // Common patterns for webform submissions
+  const patterns = [
+    /Name\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
+    /Name\s*:?\s*([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
+    /Your Name\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
+    /Full Name\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
+    /Contact Name\s*:?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = emailBody.match(pattern);
+    if (match && match[1]) {
+      const name = match[1].trim();
+      // Validate it looks like a name (at least 2 words, each starting with capital)
+      if (name.split(/\s+/).length >= 2 && /^[A-Z]/.test(name)) {
+        return name;
+      }
+    }
+  }
+
+  return null;
+}
+
 // Get all leads
 router.get('/', (req, res) => {
   const db = getDB();
@@ -13,7 +40,12 @@ router.get('/', (req, res) => {
       c.name as contact_name,
       c.email as contact_email,
       c.phone as contact_phone,
-      c.company as contact_company
+      c.company as contact_company,
+      (SELECT body FROM communications 
+       WHERE conversation_id = l.conversation_id 
+       AND type = 'email' 
+       ORDER BY occurred_at ASC 
+       LIMIT 1) as email_body
     FROM leads l
     JOIN contacts c ON l.contact_id = c.id
     WHERE 1=1
@@ -46,7 +78,17 @@ router.get('/', (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.json(rows);
+    
+    // Extract client names from email bodies
+    const leadsWithClientNames = rows.map(lead => {
+      const clientName = extractClientName(lead.email_body);
+      return {
+        ...lead,
+        client_name: clientName
+      };
+    });
+    
+    res.json(leadsWithClientNames);
   });
 });
 
@@ -81,7 +123,7 @@ router.post('/', (req, res) => {
   db.run(
     `INSERT INTO leads (contact_id, source, status, assigned_to, notes, value)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [contact_id, source, status || 'new', assigned_to || 'me', notes, value],
+    [contact_id, source, status || 'new', assigned_to || 'James', notes, value],
     function(err) {
       if (err) {
         return res.status(500).json({ error: err.message });

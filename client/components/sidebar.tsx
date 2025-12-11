@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, UserPlus, Mail, Calendar, BarChart3, Settings, Briefcase, XCircle, Inbox, Link2, ChevronLeft, ChevronRight, ChevronDown, Building2, UserCheck, Shield, Ban } from "lucide-react"
+import { LayoutDashboard, Users, UserPlus, Mail, Calendar, BarChart3, Settings, Briefcase, XCircle, Inbox, Link2, ChevronLeft, ChevronRight, ChevronDown, Building2, UserCheck, Shield, Ban, MessageSquare, Phone, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function Sidebar() {
@@ -44,7 +44,10 @@ export function Sidebar() {
     { name: "Leads", href: "/leads", icon: UserPlus },
     { name: "Not Interested", href: "/not-interested", icon: XCircle },
     { name: "Contacts", href: "/contacts", icon: Users },
+    { name: "Agency Interactions", href: "/agency-interactions", icon: MessageSquare },
+    { name: "Call Logs", href: "/call-logs", icon: Phone },
     { name: "Follow-ups", href: "/follow-ups", icon: Calendar },
+    { name: "Calendar", href: "/calendar", icon: CalendarDays },
     { name: "Email Rules", href: "/email-rules", icon: Mail },
     { name: "Templates", href: "/templates", icon: Mail },
     { name: "Email Sync", href: "/email-sync", icon: Link2 },
@@ -87,8 +90,18 @@ export function Sidebar() {
         }).length
         
         setUnreadCount(unread)
-      } catch (error) {
-        console.error("Error checking unread count:", error)
+      } catch (error: any) {
+        // Silently handle 404 errors - route may not be loaded yet (server routes load after 3s delay)
+        if (error.response?.status === 404) {
+          setUnreadCount(0)
+          return
+        }
+        
+        // For other errors, log but don't spam console
+        if (error.response?.status !== 404) {
+          console.error("Error checking unread count:", error)
+        }
+        
         // Fallback to localStorage count if API fails
         try {
           const status = localStorage.getItem("crm_email_read_status")
@@ -96,9 +109,12 @@ export function Sidebar() {
             const emailStatus = JSON.parse(status)
             const unread = Object.values(emailStatus).filter((s: any) => !s.read).length
             setUnreadCount(unread)
+          } else {
+            setUnreadCount(0)
           }
         } catch (e) {
           // Ignore errors
+          setUnreadCount(0)
         }
       }
     }

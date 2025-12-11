@@ -106,9 +106,9 @@ export default function EmailSyncPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className="ml-64 min-w-0 overflow-x-hidden">
         <Header title="Email Sync" subtitle="Connect and sync your Outlook emails" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
           {/* Success Message */}
           {success && (
             <Alert className="mb-6 border-green-500 bg-green-50 dark:bg-green-950/20">

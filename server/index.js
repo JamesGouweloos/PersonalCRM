@@ -44,7 +44,10 @@ setTimeout(() => {
     const auditTrailRoutes = require('./routes/audit-trail');
     const disputesRoutes = require('./routes/disputes');
     const callLogsRoutes = require('./routes/call-logs');
+    const callLogsUploadRoutes = require('./routes/call-logs-upload');
     const emailRulesRoutes = require('./routes/email-rules');
+    const agencyInteractionsRoutes = require('./routes/agency-interactions');
+    const calendarRoutes = require('./routes/calendar');
 
     // API Routes
     app.use('/api/emails', emailRoutes);
@@ -62,6 +65,9 @@ setTimeout(() => {
     app.use('/api/audit-trail', auditTrailRoutes);
     app.use('/api/disputes', disputesRoutes);
     app.use('/api/call-logs', callLogsRoutes);
+    app.use('/api/call-logs-upload', callLogsUploadRoutes);
+    app.use('/api/agency-interactions', agencyInteractionsRoutes);
+    app.use('/api/calendar', calendarRoutes);
     
     console.log('✓ All API routes loaded successfully');
     console.log('  - /api/emails (auth-url, status, sync, etc.)');
@@ -97,7 +103,24 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`CRM Server running on http://localhost:${PORT}`);
-  console.log(`API available at http://localhost:${PORT}/api`);
+const HOST = process.env.HOST || '0.0.0.0';
+
+app.listen(PORT, HOST, () => {
+  console.log(`CRM Server running on http://${HOST}:${PORT}`);
+  console.log(`API available at http://${HOST}:${PORT}/api`);
+  
+  // Display network interfaces for remote access
+  if (HOST === '0.0.0.0') {
+    console.log('\n✓ Server is accessible from network interfaces:');
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    Object.keys(interfaces).forEach((name) => {
+      interfaces[name].forEach((iface) => {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          console.log(`  - http://${iface.address}:${PORT}`);
+        }
+      });
+    });
+    console.log(`\n⚠️  For internet access, configure port forwarding and use HTTPS`);
+  }
 });

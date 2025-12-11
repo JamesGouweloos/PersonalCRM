@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { emailRulesAPI } from "@/lib/api"
 import { Plus, Edit, Trash2, Play, Loader2, Settings, CheckCircle2, XCircle } from "lucide-react"
 import Link from "next/link"
+import { EmailRuleBuilderDialog } from "@/components/email-rule-builder-dialog"
 
 interface EmailRule {
   id: number
@@ -35,9 +36,29 @@ export default function EmailRulesPage() {
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [editingRule, setEditingRule] = useState<EmailRule | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     loadRules()
+  }, [])
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar_collapsed")
+    if (saved !== null) {
+      setSidebarCollapsed(saved === "true")
+    }
+    const handleStorageChange = () => {
+      const updated = localStorage.getItem("sidebar_collapsed")
+      if (updated !== null) {
+        setSidebarCollapsed(updated === "true")
+      }
+    }
+    window.addEventListener("storage", handleStorageChange)
+    const interval = setInterval(handleStorageChange, 500)
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const loadRules = async () => {
@@ -111,9 +132,9 @@ export default function EmailRulesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className={`${sidebarCollapsed ? "ml-16" : "ml-64"} min-w-0 overflow-x-hidden`} style={{ transition: "margin-left 0.3s" }}>
         <Header title="Email Rules" subtitle="Automate email processing with custom rules" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-foreground">Email Automation Rules</h2>
@@ -231,29 +252,30 @@ export default function EmailRulesPage() {
             </div>
           )}
 
-          {/* Simple Create/Edit Dialog - For now, just show a message */}
-          {showCreateDialog && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <Card className="w-full max-w-2xl">
-                <CardHeader>
-                  <CardTitle>{editingRule ? "Edit Rule" : "Create Rule"}</CardTitle>
-                  <CardDescription>
-                    Rule builder UI coming soon. For now, rules can be created via API or database.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => {
-                      setShowCreateDialog(false)
-                      setEditingRule(null)
-                    }}>
-                      Close
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+          {/* Rule Builder Dialog */}
+          <EmailRuleBuilderDialog
+            open={showCreateDialog}
+            onOpenChange={(open) => {
+              setShowCreateDialog(open)
+              if (!open) {
+                setEditingRule(null)
+              }
+            }}
+            rule={editingRule}
+            onSave={async (ruleData) => {
+              try {
+                if (editingRule?.id) {
+                  await emailRulesAPI.update(editingRule.id.toString(), ruleData)
+                } else {
+                  await emailRulesAPI.create(ruleData)
+                }
+                await loadRules()
+              } catch (error: any) {
+                console.error("Error saving rule:", error)
+                throw error
+              }
+            }}
+          />
         </div>
       </main>
     </div>

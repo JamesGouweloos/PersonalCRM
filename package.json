@@ -8,25 +8,32 @@
     "server": "nodemon server/index.js",
     "client": "cd client && pnpm dev",
     "install-all": "npm install && cd client && (if (Get-Command pnpm -ErrorAction SilentlyContinue) { pnpm install } else { npm install })",
-    "build": "cd client && pnpm build"
+    "build": "cd client && pnpm build",
+    "start": "node server/index.js",
+    "start:prod": "NODE_ENV=production node server/index.js"
   },
-  "keywords": ["crm", "sales", "pipeline", "outlook"],
+  "keywords": [
+    "crm",
+    "sales",
+    "pipeline",
+    "outlook"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "sqlite3": "^5.1.6",
     "@azure/msal-node": "^2.6.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "body-parser": "^1.20.2",
-    "date-fns": "^2.30.0"
+    "cors": "^2.8.5",
+    "date-fns": "^2.30.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "multer": "^2.0.2",
+    "sqlite3": "^5.1.6",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1"
   }
 }
-
-

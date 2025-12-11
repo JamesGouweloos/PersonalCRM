@@ -71,9 +71,10 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className="ml-64 min-w-0 overflow-x-hidden">
         <Header title="Settings" subtitle="Manage your CRM settings" />
-        <div className="p-6 max-w-3xl">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
+          <div className="max-w-3xl mx-auto">
           <Alert className="mb-6 bg-card border-border">
             <Info className="h-4 w-4" />
             <AlertTitle className="text-foreground">Outlook Integration</AlertTitle>
@@ -153,6 +154,7 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
           </div>
         </div>
       </main>

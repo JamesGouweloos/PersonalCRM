@@ -64,9 +64,9 @@ export default function TemplatesPage() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <main className="ml-64">
+      <main className="ml-64 min-w-0 overflow-x-hidden">
         <Header title="Email Templates" subtitle="Manage your email templates for Outlook" />
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-full overflow-x-hidden">
           {/* Header Actions */}
           <div className="mb-6 flex items-center justify-between">
             <div>

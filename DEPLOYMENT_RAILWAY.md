@@ -39,7 +39,21 @@ The build script now:
 - Railway uses `npm` by default (not pnpm)
 - The build script has been updated to use npm
 - Next.js standalone mode is enabled for better deployment
+- **Node.js version**: Requires Node.js 20.9.0 or higher (specified in `.nvmrc`, `.node-version`, and `package.json`)
 - Make sure to set `NEXT_PUBLIC_API_URL` to your Railway URL
+
+## Node.js Version
+
+The project requires Node.js >= 20.9.0 (for Next.js 16 compatibility). Railway should automatically detect this from:
+- `.nvmrc` file
+- `.node-version` file  
+- `package.json` engines field
+- `nixpacks.toml` configuration
+
+If Railway still uses Node.js 18, you can manually set it in Railway dashboard:
+1. Go to your service settings
+2. Under "Build & Deploy" → "Build Command"
+3. Or set environment variable: `NIXPACKS_NODE_VERSION=20`
 
 ## Troubleshooting
 

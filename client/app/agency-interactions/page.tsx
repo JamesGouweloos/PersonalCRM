@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState , Suspense} from "react"
 import { format } from "date-fns"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
@@ -61,7 +63,7 @@ interface Contact {
   company?: string
 }
 
-export default function AgencyInteractionsPage() {
+function AgencyInteractionsPageContent() {
   const [interactions, setInteractions] = useState<AgencyInteraction[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
@@ -366,3 +368,13 @@ export default function AgencyInteractionsPage() {
   )
 }
 
+
+
+
+export default function AgencyInteractionsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <AgencyInteractionsPageContent />
+    </Suspense>
+  )
+}

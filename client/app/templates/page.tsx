@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState , Suspense} from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -20,7 +22,7 @@ const typeLabels: Record<EmailTemplate["type"], { label: string; className: stri
   return_client: { label: "Return Client", className: "bg-muted text-muted-foreground" },
 }
 
-export default function TemplatesPage() {
+function TemplatesPageContent() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null)
@@ -173,5 +175,15 @@ export default function TemplatesPage() {
         onSave={loadData}
       />
     </div>
+  )
+}
+
+
+
+export default function TemplatesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <TemplatesPageContent />
+    </Suspense>
   )
 }

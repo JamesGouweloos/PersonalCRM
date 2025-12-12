@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -8,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Trash2, Download, Upload, Info, Database } from "lucide-react"
 import { getLeads, getContacts, getFollowUps, getTemplates, getActivities } from "@/lib/store"
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const handleExportData = () => {
     const data = {
       leads: getLeads(),
@@ -159,5 +160,15 @@ export default function SettingsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <SettingsPageContent />
+    </Suspense>
   )
 }

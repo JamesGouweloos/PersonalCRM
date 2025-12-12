@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, Suspense } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -31,7 +31,7 @@ const SOURCE_COLORS: Record<OpportunitySource, string> = {
   forwarded: "bg-indigo-500/10 text-indigo-500",
 }
 
-export default function OpportunitiesPage() {
+function OpportunitiesContent() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [contacts, setContacts] = useState<Record<string, Contact>>({})
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -279,3 +279,13 @@ export default function OpportunitiesPage() {
 }
 
 
+
+
+
+export default function OpportunitiesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <OpportunitiesContent />
+    </Suspense>
+  )
+}

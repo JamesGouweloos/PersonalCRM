@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState, useMemo , Suspense} from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -21,7 +23,7 @@ const typeIcons = {
   social: Share2,
 }
 
-export default function FollowUpsPage() {
+function FollowUpsPageContent() {
   const [followUps, setFollowUps] = useState<FollowUp[]>([])
   const [contacts, setContacts] = useState<Record<string, Contact>>({})
   const [leads, setLeads] = useState<Record<string, Lead>>({})
@@ -354,5 +356,15 @@ export default function FollowUpsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+
+
+export default function FollowUpsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <FollowUpsPageContent />
+    </Suspense>
   )
 }

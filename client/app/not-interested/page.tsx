@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState, useMemo , Suspense} from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -13,7 +15,7 @@ import type { Lead, Contact, LeadSource } from "@/lib/types"
 import { Search, Filter, RotateCcw } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
-export default function NotInterestedPage() {
+function NotInterestedPageContent() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [contacts, setContacts] = useState<Record<string, Contact>>({})
   const [searchQuery, setSearchQuery] = useState("")
@@ -149,3 +151,13 @@ export default function NotInterestedPage() {
 }
 
 
+
+
+
+export default function NotInterestedPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <NotInterestedPageContent />
+    </Suspense>
+  )
+}

@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState, useMemo , Suspense} from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -18,7 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { emailsAPI, activitiesAPI } from "@/lib/api"
 
-export default function LeadsPage() {
+function LeadsPageContent() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [contacts, setContacts] = useState<Record<string, Contact>>({})
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -393,5 +395,15 @@ export default function LeadsPage() {
         </Dialog>
       )}
     </div>
+  )
+}
+
+
+
+export default function LeadsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <LeadsPageContent />
+    </Suspense>
   )
 }

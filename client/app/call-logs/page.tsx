@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState, useRef , Suspense} from "react"
 import { format } from "date-fns"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
@@ -42,7 +44,7 @@ interface CallLog {
   user: string
 }
 
-export default function CallLogsPage() {
+function CallLogsPageContent() {
   const [callLogs, setCallLogs] = useState<CallLog[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -488,3 +490,13 @@ export default function CallLogsPage() {
   )
 }
 
+
+
+
+export default function CallLogsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <CallLogsPageContent />
+    </Suspense>
+  )
+}

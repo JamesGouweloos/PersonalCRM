@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState, useMemo , Suspense} from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,7 +46,7 @@ const statusLabels: Record<LeadStatus, string> = {
   dropped: "Dropped",
 }
 
-export default function AnalyticsPage() {
+function AnalyticsPageContent() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [followUps, setFollowUps] = useState<FollowUp[]>([])
@@ -401,5 +403,15 @@ export default function AnalyticsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+
+
+export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <AnalyticsPageContent />
+    </Suspense>
   )
 }

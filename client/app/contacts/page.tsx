@@ -1,6 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+
+export const dynamic = 'force-dynamic'
+import { useEffect, useState, useMemo , Suspense} from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
@@ -16,7 +18,7 @@ import { Plus, Search, MoreHorizontal, Edit, Trash2, UserPlus, Mail, Loader2, Tr
 import { format } from "date-fns"
 import Link from "next/link"
 
-export default function ContactsPage() {
+function ContactsPageContent() {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [leads, setLeads] = useState<Lead[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -809,5 +811,15 @@ export default function ContactsPage() {
         onSave={loadData}
       />
     </div>
+  )
+}
+
+
+
+export default function ContactsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background"><div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" /><main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></main></div>}>
+      <ContactsPageContent />
+    </Suspense>
   )
 }

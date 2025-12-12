@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useRef, useMemo } from "react"
+import React, { useEffect, useState, useRef, useMemo, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Sidebar } from "@/components/sidebar"
 import { Header } from "@/components/header"
@@ -69,7 +69,7 @@ interface Opportunity {
 
 type FilterType = 'all' | 'unread' | 'inbound' | 'outbound' | 'has_opportunity' | 'has_contact' | 'today' | 'this_week'
 
-export default function InboxPage() {
+function InboxContent() {
   const searchParams = useSearchParams()
   const contactTypeFilter = searchParams.get('type') || 'all'
   const conversationIdFilter = searchParams.get('conversation_id') || null
@@ -1659,5 +1659,22 @@ function CreateOpportunityFromEmailDialog({ open, onOpenChange, email, contactId
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+
+
+export default function InboxPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background">
+        <div className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border" />
+        <main className="ml-64 min-w-0 overflow-x-hidden flex items-center justify-center">
+          <div className="text-muted-foreground">Loading inbox...</div>
+        </main>
+      </div>
+    }>
+      <InboxContent />
+    </Suspense>
   )
 }

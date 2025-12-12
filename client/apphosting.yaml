@@ -1,0 +1,10 @@
+# Firebase App Hosting configuration for Next.js app
+# Use this if Firebase Console is configured with 'client' as root directory
+
+run:
+  buildCommand: npm ci && npm run build
+  startCommand: npm start
+
+# Environment variables set in Firebase Console:
+# - NEXT_PUBLIC_API_URL
+

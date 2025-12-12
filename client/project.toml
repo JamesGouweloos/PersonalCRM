@@ -1,0 +1,14 @@
+# Cloud Native Buildpacks project configuration
+# This helps Firebase App Hosting detect and build the Next.js app correctly
+
+[build]
+  # Specify Node.js version
+  [[build.env]]
+    name = "NODE_VERSION"
+    value = "18"
+
+  # Build command
+  [[build.env]]
+    name = "BP_NODE_PROJECT_PATH"
+    value = "."
+

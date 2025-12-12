@@ -1,0 +1,14 @@
+# Firebase App Hosting configuration
+# Note: Configure Firebase Console to use 'client' as the root directory
+# OR update root package.json build scripts to delegate to client directory
+
+run:
+  # Build command - uses root package.json build script
+  buildCommand: npm run build
+  # Start command - uses root package.json start script  
+  startCommand: npm start
+
+# Environment variables can be set in Firebase Console
+# Required:
+# - NEXT_PUBLIC_API_URL (your backend API URL)
+

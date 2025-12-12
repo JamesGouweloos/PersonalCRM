@@ -8,7 +8,9 @@
     "server": "nodemon server/index.js",
     "client": "cd client && pnpm dev",
     "install-all": "npm install && cd client && (if (Get-Command pnpm -ErrorAction SilentlyContinue) { pnpm install } else { npm install })",
-    "build": "cd client && pnpm build"
+    "build": "cd client && npm ci && npm run build",
+    "start": "cd client && npm start",
+    "gcp-build": "cd client && npm ci && npm run build"
   },
   "keywords": [
     "crm",

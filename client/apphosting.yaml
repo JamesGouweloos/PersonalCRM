@@ -5,6 +5,42 @@ run:
   buildCommand: npm ci && npm run build
   startCommand: npm start
 
-# Environment variables set in Firebase Console:
-# - NEXT_PUBLIC_API_URL
+# Environment variables
+# Set actual values in Firebase Console → App Hosting → Environment Variables
+# For sensitive values (OUTLOOK_CLIENT_SECRET), use Firebase Secrets Manager
+env:
+  - variable: PORT
+    value: "3000"
+    availability:
+      - RUNTIME
+  - variable: NEXT_PUBLIC_API_URL
+    value: "https://your-backend-api.com/api"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OUTLOOK_CLIENT_ID
+    value: "your-client-id"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OUTLOOK_CLIENT_SECRET
+    value: "your-client-secret"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OUTLOOK_TENANT_ID
+    value: "your-tenant-id"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: OUTLOOK_REDIRECT_URI
+    value: "https://your-app-url.com/api/emails/callback"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: FRONTEND_URL
+    value: "https://your-app-url.com"
+    availability:
+      - BUILD
+      - RUNTIME
 

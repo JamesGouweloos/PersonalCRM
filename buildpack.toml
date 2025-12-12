@@ -5,5 +5,5 @@
   # Specify Node.js version (matching client/.nvmrc)
   [[build.env]]
     name = "NODE_VERSION"
-    value = "18"
+    value = "20"
 

@@ -45,7 +45,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: FRONTEND_URL
-    value: "https://your-app-url.com"
+    value: "https://personalcrm--personalcrm-12a24.us-east4.hosted.app"
     availability:
       - BUILD
       - RUNTIME

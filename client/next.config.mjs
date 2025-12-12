@@ -9,8 +9,9 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
   },
-  // Disable static optimization for pages that use dynamic features
-  output: 'standalone',
+  // Firebase App Hosting handles the output format automatically
+  // Remove standalone mode for Firebase App Hosting compatibility
+  // output: 'standalone',
 }
 
 export default nextConfig

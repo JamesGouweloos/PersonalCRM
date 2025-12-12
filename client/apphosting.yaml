@@ -9,37 +9,35 @@ run:
 # Set actual values in Firebase Console → App Hosting → Environment Variables
 # For sensitive values (OUTLOOK_CLIENT_SECRET), use Firebase Secrets Manager
 env:
-  - variable: PORT
-    value: "3000"
-    availability:
-      - RUNTIME
   - variable: NEXT_PUBLIC_API_URL
-    value: "https://your-backend-api.com/api"
+    value: "https://personalcrm--personalcrm-12a24.us-east4.hosted.app/api"
     availability:
       - BUILD
       - RUNTIME
   - variable: OUTLOOK_CLIENT_ID
-    value: "your-client-id"
+    value: "fdaf64d6-d66e-4990-880f-4bec320574b4"
     availability:
       - BUILD
       - RUNTIME
   - variable: OUTLOOK_CLIENT_SECRET
-    value: "your-client-secret"
+    # SECURITY: Set this value in Firebase Console → App Hosting → Secrets Manager
+    # Do not commit actual secret values to the repository
+    value: "${OUTLOOK_CLIENT_SECRET}"
     availability:
       - BUILD
       - RUNTIME
   - variable: OUTLOOK_TENANT_ID
-    value: "your-tenant-id"
+    value: "2d143b33-a956-4f25-83ae-aa21c1727ac9"
     availability:
       - BUILD
       - RUNTIME
   - variable: OUTLOOK_REDIRECT_URI
-    value: "https://your-app-url.com/api/emails/callback"
+    value: "https://personalcrm--personalcrm-12a24.us-east4.hosted.app/api/emails/callback"
     availability:
       - BUILD
       - RUNTIME
   - variable: FRONTEND_URL
-    value: "https://your-app-url.com"
+    value: "https://personalcrm--personalcrm-12a24.us-east4.hosted.app"
     availability:
       - BUILD
       - RUNTIME

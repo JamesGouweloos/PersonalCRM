@@ -2,7 +2,7 @@
   "hosting": [],
   "apphosting": {
     "backend": {
-      "serviceAccount": "apphosting-backend@personalcrm-12a24.iam.gserviceaccount.com"
+      "serviceAccount": "firebase-app-hosting-compute@personalcrm-12a24.iam.gserviceaccount.com"
     }
   }
 }

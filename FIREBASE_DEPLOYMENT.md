@@ -40,10 +40,25 @@ Set these in Firebase Console → App Hosting → Environment Variables:
 
 ## Troubleshooting
 
-### Error: "build step 2 pack failed"
-- Ensure Firebase Console is configured to use `client` as root directory
-- Or ensure root `package.json` has proper build scripts
-- Check that Node.js 18 is available in the build environment
+### Error: "build step 2 pack failed" or "status code 51"
+This error occurs when Firebase buildpacks fail to detect the project type. Solutions:
+
+**CRITICAL: Set Root Directory in Firebase Console**
+1. Go to Firebase Console → App Hosting → Your App → Settings
+2. Find "Root Directory" or "Source Directory" setting
+3. Set it to: `client`
+4. Save and redeploy
+
+**Why this is necessary:**
+- Firebase buildpacks auto-detect project type by looking for `package.json` and framework files
+- If building from root, it finds the Express backend `package.json` instead of Next.js
+- Setting root directory to `client` makes Firebase treat it as the project root
+- This allows proper Next.js detection and build
+
+**Alternative (if root directory can't be changed):**
+- The `apphosting.yaml` has been updated with explicit `cd client` commands
+- However, buildpack detection may still fail before these commands run
+- Root directory configuration is the recommended solution
 
 ### Build succeeds but app doesn't start
 - Verify `NEXT_PUBLIC_API_URL` is set correctly

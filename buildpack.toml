@@ -1,0 +1,9 @@
+# Cloud Native Buildpacks configuration for Firebase App Hosting
+# This helps Firebase detect the Next.js application in the client subdirectory
+
+[build]
+  # Specify Node.js version (matching client/.nvmrc)
+  [[build.env]]
+    name = "NODE_VERSION"
+    value = "18"
+

@@ -1,12 +1,13 @@
 # Firebase App Hosting configuration
-# Note: Configure Firebase Console to use 'client' as the root directory
-# OR update root package.json build scripts to delegate to client directory
+# IMPORTANT: Configure Firebase Console → App Hosting → Settings
+# Set "Root Directory" to "client" for this to work correctly
+# Otherwise, Firebase will try to build from root and fail
 
 run:
-  # Build command - uses root package.json build script
-  buildCommand: npm run build
-  # Start command - uses root package.json start script  
-  startCommand: npm start
+  # Build command - navigate to client directory and build
+  buildCommand: cd client && npm ci && npm run build
+  # Start command - navigate to client directory and start
+  startCommand: cd client && npm start
 
 # Environment variables
 # Set actual values in Firebase Console → App Hosting → Environment Variables

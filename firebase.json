@@ -1,0 +1,9 @@
+{
+  "hosting": [],
+  "apphosting": {
+    "backend": {
+      "serviceAccount": "apphosting-backend@personalcrm-12a24.iam.gserviceaccount.com"
+    }
+  }
+}
+

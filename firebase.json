@@ -1,9 +1,7 @@
 {
   "hosting": [],
   "apphosting": {
-    "backend": {
-      "serviceAccount": "firebase-app-hosting-compute@personalcrm-12a24.iam.gserviceaccount.com"
-    }
+    "ignore": []
   }
 }
 
